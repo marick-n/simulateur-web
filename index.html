@@ -1,0 +1,1341 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulateur de Devis Webflow</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        .simulator-container {
+            max-width: 800px;
+            margin: 0 auto;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 2rem;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .header p {
+            opacity: 0.9;
+            font-size: 1.1rem;
+        }
+        
+        .progress-bar {
+            height: 4px;
+            background: rgba(255,255,255,0.2);
+            margin-top: 1rem;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: white;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+        
+        .step {
+            display: none;
+            padding: 2rem;
+            min-height: 400px;
+        }
+        
+        .step.active {
+            display: block;
+        }
+        
+        .step h2 {
+            color: #333;
+            margin-bottom: 1.5rem;
+            font-size: 1.5rem;
+        }
+        
+        .options {
+            display: grid;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        
+        .option {
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: white;
+        }
+        
+        .option:hover {
+            border-color: #667eea;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
+        }
+        
+        .option.selected {
+            border-color: #667eea;
+            background: #f8faff;
+        }
+        
+        .option-title {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .option-price {
+            color: #667eea;
+            font-weight: 700;
+            font-size: 1.1rem;
+        }
+        
+        .option-description {
+            color: #666;
+            font-size: 0.9rem;
+            margin-top: 0.5rem;
+        }
+        
+        .checkbox-option {
+            display: flex;
+            align-items: flex-start;
+            gap: 1rem;
+        }
+        
+        .checkbox-option input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            margin-top: 2px;
+        }
+        
+        .navigation {
+            display: flex;
+            justify-content: space-between;
+            padding: 0 2rem 2rem;
+        }
+        
+        .btn {
+            padding: 0.75rem 2rem;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 1rem;
+        }
+        
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #5a6fd8;
+        }
+        
+        .btn-secondary {
+            background: #f3f4f6;
+            color: #374151;
+        }
+        
+        .btn-secondary:hover {
+            background: #e5e7eb;
+        }
+        
+        .price-summary {
+            background: #f8faff;
+            border: 2px solid #667eea;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin: 1rem 0;
+        }
+        
+        .price-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+        }
+        
+        .price-total {
+            border-top: 2px solid #667eea;
+            padding-top: 1rem;
+            margin-top: 1rem;
+            font-weight: 700;
+            font-size: 1.2rem;
+        }
+        
+        .contact-form {
+            display: grid;
+            gap: 1rem;
+        }
+        
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .form-group label {
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .form-group input,
+        .form-group textarea {
+            padding: 0.75rem;
+            border: 2px solid #e5e7eb;
+            border-radius: 6px;
+            font-size: 1rem;
+        }
+        
+        .form-group input:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .required {
+            color: #ef4444;
+        }
+        
+        @media (max-width: 768px) {
+            .simulator-container {
+                margin: 1rem;
+            }
+            
+            .header {
+                padding: 1.5rem;
+            }
+            
+            .header h1 {
+                font-size: 1.5rem;
+            }
+            
+            .step {
+                padding: 1.5rem;
+            }
+            
+            .navigation {
+                padding: 0 1.5rem 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="simulator-container">
+        <div class="header">
+            <h1>🚀 Simulateur de Devis Webflow</h1>
+            <p>Obtenez une estimation personnalisée en 2 minutes</p>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+        </div>
+
+        <!-- Étape 1: Type de projet -->
+        <div class="step active" data-step="1">
+            <h2>Quel type de projet web avez-vous ?</h2>
+            <div class="options">
+                <div class="option" data-value="vitrine" data-price="3500">
+                    <div class="option-title">🏢 Site vitrine professionnel</div>
+                    <div class="option-price">À partir de 3 500€</div>
+                    <div class="option-description">Site corporate avec pages essentielles</div>
+                </div>
+                <div class="option" data-value="ecommerce" data-price="6000">
+                    <div class="option-title">🛍️ Site e-commerce</div>
+                    <div class="option-price">À partir de 6 000€</div>
+                    <div class="option-description">Boutique en ligne complète</div>
+                </div>
+                <div class="option" data-value="landing" data-price="2500">
+                    <div class="option-title">📱 Landing page</div>
+                    <div class="option-price">À partir de 2 500€</div>
+                    <div class="option-description">Page de conversion optimisée</div>
+                </div>
+                <div class="option" data-value="refonte" data-price="2800">
+                    <div class="option-title">🔄 Refonte d'un site existant</div>
+                    <div class="option-price">À partir de 2 800€</div>
+                    <div class="option-description">Modernisation de votre site actuel (-20%)</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Étape 2: Nombre de pages -->
+        <div class="step" data-step="2">
+            <h2>Combien de pages souhaitez-vous ?</h2>
+            <div class="options">
+                <div class="option" data-value="1-5" data-price="0">
+                    <div class="option-title">📄 1-5 pages</div>
+                    <div class="option-price">Inclus</div>
+                    <div class="option-description">Idéal pour commencer</div>
+                </div>
+                <div class="option" data-value="6-10" data-price="1600">
+                    <div class="option-title">📑 6-10 pages</div>
+                    <div class="option-price">+1 600€</div>
+                    <div class="option-description">Pour plus de contenu</div>
+                </div>
+                <div class="option" data-value="11-20" data-price="3200">
+                    <div class="option-title">📚 11-20 pages</div>
+                    <div class="option-price">+3 200€</div>
+                    <div class="option-description">Site complet et détaillé</div>
+                </div>
+                <div class="option" data-value="20+" data-price="0">
+                    <div class="option-title">📖 Plus de 20 pages</div>
+                    <div class="option-price">Devis sur-mesure</div>
+                    <div class="option-description">Contactez-nous directement</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Étape 3: Design & Branding -->
+        <div class="step" data-step="3">
+            <h2>Avez-vous besoin d'aide pour votre identité visuelle ?</h2>
+            <div class="options">
+                <div class="checkbox-option option" data-value="nothing" data-price="0">
+                    <input type="checkbox" id="nothing">
+                    <div>
+                        <div class="option-title">✅ J'ai déjà tout</div>
+                        <div class="option-price">Parfait !</div>
+                        <div class="option-description">Logo, charte graphique, photos prêts</div>
+                    </div>
+                </div>
+                <div class="checkbox-option option" data-value="logo" data-price="1000">
+                    <input type="checkbox" id="logo">
+                    <div>
+                        <div class="option-title">🎨 Création de logo</div>
+                        <div class="option-price">+1 000€</div>
+                        <div class="option-description">Logo professionnel avec déclinaisons</div>
+                    </div>
+                </div>
+                <div class="checkbox-option option" data-value="charte" data-price="2000">
+                    <input type="checkbox" id="charte">
+                    <div>
+                        <div class="option-title">📋 Charte graphique complète</div>
+                        <div class="option-price">+2 000€</div>
+                        <div class="option-description">Couleurs, typographies, guidelines</div>
+                    </div>
+                </div>
+                <div class="checkbox-option option" data-value="photos" data-price="1500">
+                    <input type="checkbox" id="photos">
+                    <div>
+                        <div class="option-title">📸 Photoshoot professionnel</div>
+                        <div class="option-price">+1 500€</div>
+                        <div class="option-description">Séance photo sur-mesure</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Étape 4: Fonctionnalités -->
+        <div class="step" data-step="4">
+            <h2>Quelles fonctionnalités souhaitez-vous intégrer ?</h2>
+            <div class="options" id="fonctionnalites">
+                <div class="checkbox-option option" data-value="blog" data-price="1000">
+                    <input type="checkbox" id="blog">
+                    <div>
+                        <div class="option-title">📝 Blog avec CMS</div>
+                        <div class="option-price">+1 000€</div>
+                        <div class="option-description">Système de publication d'articles</div>
+                    </div>
+                </div>
+                <div class="checkbox-option option" data-value="newsletter" data-price="750">
+                    <input type="checkbox" id="newsletter">
+                    <div>
+                        <div class="option-title">📧 Newsletter/Email marketing</div>
+                        <div class="option-price">+750€</div>
+                        <div class="option-description">Intégration Mailchimp ou similaire</div>
+                    </div>
+                </div>
+                <div class="checkbox-option option" data-value="rdv" data-price="400">
+                    <input type="checkbox" id="rdv">
+                    <div>
+                        <div class="option-title">📞 Prise de RDV en ligne</div>
+                        <div class="option-price">+400€</div>
+                        <div class="option-description">Calendrier de réservation</div>
+                    </div>
+                </div>
+                <div class="checkbox-option option" data-value="chat" data-price="350">
+                    <input type="checkbox" id="chat">
+                    <div>
+                        <div class="option-title">💬 Chat en direct</div>
+                        <div class="option-price">+350€</div>
+                        <div class="option-description">Support client instantané</div>
+                    </div>
+                </div>
+                <div class="checkbox-option option" data-value="crm" data-price="1500">
+                    <input type="checkbox" id="crm">
+                    <div>
+                        <div class="option-title">🔗 Intégration CRM</div>
+                        <div class="option-price">+1 500€</div>
+                        <div class="option-description">HubSpot, Pipedrive, etc.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Étape 5: Langues -->
+        <div class="step" data-step="5">
+            <h2>Votre site sera-t-il multilingue ?</h2>
+            <div class="options">
+                <div class="option" data-value="fr" data-price="0">
+                    <div class="option-title">🇫🇷 Français uniquement</div>
+                    <div class="option-price">Inclus</div>
+                </div>
+                <div class="option" data-value="bilingue" data-price="2000">
+                    <div class="option-title">🇫🇷🇬🇧 Bilingue FR/EN</div>
+                    <div class="option-price">+2 000€</div>
+                </div>
+                <div class="option" data-value="multilingue" data-price="3500">
+                    <div class="option-title">🌍 3 langues ou plus</div>
+                    <div class="option-price">+3 500€</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Étape 6: SEO & Performance -->
+        <div class="step" data-step="6">
+            <h2>Souhaitez-vous des optimisations avancées ?</h2>
+            <div class="options">
+                <div class="checkbox-option option" data-value="seo-base" data-price="0">
+                    <input type="checkbox" id="seo-base" checked disabled>
+                    <div>
+                        <div class="option-title">✅ SEO de base</div>
+                        <div class="option-price">Inclus</div>
+                        <div class="option-description">Balises meta, structure, sitemap</div>
+                    </div>
+                </div>
+                <div class="checkbox-option option" data-value="seo-audit" data-price="1500">
+                    <input type="checkbox" id="seo-audit">
+                    <div>
+                        <div class="option-title">🔍 Audit SEO complet</div>
+                        <div class="option-price">+1 500€</div>
+                        <div class="option-description">Analyse approfondie + optimisations</div>
+                    </div>
+                </div>
+                <div class="checkbox-option option" data-value="vitesse" data-price="750">
+                    <input type="checkbox" id="vitesse">
+                    <div>
+                        <div class="option-title">⚡ Optimisation vitesse avancée</div>
+                        <div class="option-price">+750€</div>
+                        <div class="option-description">Performance maximale</div>
+                    </div>
+                </div>
+                <div class="checkbox-option option" data-value="analytics" data-price="500">
+                    <input type="checkbox" id="analytics">
+                    <div>
+                        <div class="option-title">📈 Analytics avancés</div>
+                        <div class="option-price">+500€</div>
+                        <div class="option-description">GA4 + GTM configurés</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Étape 7: Support & Formation -->
+        <div class="step" data-step="7">
+            <h2>Avez-vous besoin d'accompagnement ?</h2>
+            <div class="options">
+                <div class="checkbox-option option" data-value="formation" data-price="500">
+                    <input type="checkbox" id="formation">
+                    <div>
+                        <div class="option-title">📚 Formation Webflow (2h)</div>
+                        <div class="option-price">+500€</div>
+                        <div class="option-description">Apprenez à gérer votre site</div>
+                    </div>
+                </div>
+                <div class="checkbox-option option" data-value="documentation" data-price="400">
+                    <input type="checkbox" id="documentation">
+                    <div>
+                        <div class="option-title">📋 Documentation personnalisée</div>
+                        <div class="option-price">+400€</div>
+                        <div class="option-description">Guide d'utilisation sur-mesure</div>
+                    </div>
+                </div>
+                <div class="checkbox-option option" data-value="support" data-price="450">
+                    <input type="checkbox" id="support">
+                    <div>
+                        <div class="option-title">🔧 Support prioritaire 3 mois</div>
+                        <div class="option-price">+450€</div>
+                        <div class="option-description">Assistance rapide garantie</div>
+                    </div>
+                </div>
+                <div class="checkbox-option option" data-value="maintenance" data-price="450">
+                    <input type="checkbox" id="maintenance">
+                    <div>
+                        <div class="option-title">🛠️ Maintenance (3 mois)</div>
+                        <div class="option-price">+450€</div>
+                        <div class="option-description">150€/mois pendant 3 mois</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Étape 8: Délais -->
+        <div class="step" data-step="8">
+            <h2>Quel délai souhaitez-vous ?</h2>
+            <div class="options">
+                <div class="option" data-value="standard" data-price="0">
+                    <div class="option-title">📅 Délai standard</div>
+                    <div class="option-price">3-4 semaines</div>
+                    <div class="option-description">Planification normale</div>
+                </div>
+                <div class="option" data-value="express" data-price-multiplier="1.5">
+                    <div class="option-title">⚡ Livraison express</div>
+                    <div class="option-price">+50% du total</div>
+                    <div class="option-description">2 semaines maximum</div>
+                </div>
+                <div class="option" data-value="flexible" data-price-multiplier="0.95">
+                    <div class="option-title">🗓️ Délai flexible</div>
+                    <div class="option-price">-5% du total</div>
+                    <div class="option-description">Pas de contrainte de temps</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Étape 9: Contact -->
+        <div class="step" data-step="9">
+            <h2>Vos coordonnées</h2>
+            <form class="contact-form" id="contactForm">
+                <div class="form-group">
+                    <label>Prénom <span class="required">*</span></label>
+                    <input type="text" name="prenom" required>
+                </div>
+                <div class="form-group">
+                    <label>Nom <span class="required">*</span></label>
+                    <input type="text" name="nom" required>
+                </div>
+                <div class="form-group">
+                    <label>Email <span class="required">*</span></label>
+                    <input type="email" name="email" required>
+                </div>
+                <div class="form-group">
+                    <label>Téléphone</label>
+                    <input type="tel" name="telephone">
+                </div>
+                <div class="form-group">
+                    <label>Entreprise</label>
+                    <input type="text" name="entreprise">
+                </div>
+                <div class="form-group">
+                    <label>Commentaires sur votre projet</label>
+                    <textarea name="commentaires" rows="4" placeholder="Décrivez votre projet en quelques mots..."></textarea>
+                </div>
+            </form>
+        </div>
+
+        <!-- Étape 10: Récapitulatif -->
+        <div class="step" data-step="10">
+            <h2>📋 Récapitulatif de votre projet</h2>
+            <div class="price-summary" id="finalSummary">
+                <!-- Le récapitulatif sera généré par JavaScript -->
+            </div>
+            <div style="background: #f0f9ff; padding: 1.5rem; border-radius: 8px; margin-top: 1rem;">
+                <h3 style="color: #0369a1; margin-bottom: 1rem;">📧 Recevez votre devis par email</h3>
+                <p style="margin-bottom: 0.5rem;">✅ Devis détaillé avec tous les prix</p>
+                <p style="margin-bottom: 0.5rem;">✅ Récapitulatif HT et TTC</p>
+                <p style="margin-bottom: 0.5rem;">✅ Nos coordonnées directes</p>
+                <p style="margin-bottom: 1rem;">✅ Guides bonus inclus</p>
+                <p style="font-weight: 600; color: #0369a1;">🎁 Nous vous appelons sous 24h pour finaliser votre projet !</p>
+            </div>
+        </div>
+
+        <div class="navigation">
+            <button class="btn btn-secondary" id="prevBtn" onclick="previousStep()">Précédent</button>
+            <button class="btn btn-primary" id="nextBtn" onclick="nextStep()">Suivant</button>
+        </div>
+    </div>
+
+    <script>
+        let currentStep = 1;
+        const totalSteps = 10;
+        let selections = {};
+        let totalPrice = 0;
+
+        function updateProgress() {
+            const progress = (currentStep / totalSteps) * 100;
+            document.getElementById('progressFill').style.width = progress + '%';
+        }
+
+        function showStep(step) {
+            document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
+            document.querySelector(`[data-step="${step}"]`).classList.add('active');
+            
+            const prevBtn = document.getElementById('prevBtn');
+            const nextBtn = document.getElementById('nextBtn');
+            
+            prevBtn.style.display = step === 1 ? 'none' : 'block';
+            
+            if (step === totalSteps) {
+                nextBtn.textContent = 'Recevoir mon devis par email';
+                nextBtn.onclick = submitForm;
+            } else {
+                nextBtn.textContent = 'Suivant';
+                nextBtn.onclick = nextStep;
+            }
+            
+            updateProgress();
+        }
+
+        function nextStep() {
+            if (currentStep < totalSteps) {
+                if (validateCurrentStep()) {
+                    currentStep++;
+                    showStep(currentStep);
+                    
+                    if (currentStep === 10) {
+                        generateFinalSummary();
+                    }
+                }
+            }
+        }
+
+        function previousStep() {
+            if (currentStep > 1) {
+                currentStep--;
+                showStep(currentStep);
+            }
+        }
+
+        function validateCurrentStep() {
+            const currentStepEl = document.querySelector(`[data-step="${currentStep}"]`);
+            
+            // Pour les étapes avec sélection unique
+            if (currentStep <= 2 || currentStep === 5 || currentStep === 8) {
+                const selected = currentStepEl.querySelector('.option.selected');
+                if (!selected) {
+                    alert('Veuillez sélectionner une option');
+                    return false;
+                }
+            }
+            
+            // Pour l'étape contact
+            if (currentStep === 9) {
+                const form = document.getElementById('contactForm');
+                const requiredFields = form.querySelectorAll('[required]');
+                for (let field of requiredFields) {
+                    if (!field.value.trim()) {
+                        alert('Veuillez remplir tous les champs obligatoires');
+                        field.focus();
+                        return false;
+                    }
+                }
+            }
+            
+            return true;
+        }
+
+        // Gestion des sélections pour les options uniques
+        document.addEventListener('click', function(e) {
+            if (e.target.closest('.option') && !e.target.closest('.checkbox-option')) {
+                const option = e.target.closest('.option');
+                const step = option.closest('.step');
+                
+                // Désélectionner les autres options de cette étape
+                step.querySelectorAll('.option').forEach(opt => opt.classList.remove('selected'));
+                option.classList.add('selected');
+                
+                // Sauvegarder la sélection
+                const stepNum = step.dataset.step;
+                const value = option.dataset.value;
+                const price = parseInt(option.dataset.price) || 0;
+                const multiplier = parseFloat(option.dataset.priceMultiplier) || 1;
+                
+                selections[stepNum] = {
+                    value: value,
+                    price: price,
+                    multiplier: multiplier,
+                    text: option.querySelector('.option-title').textContent
+                };
+
+                // Mise à jour dynamique pour l'e-commerce
+                if (stepNum === '1' && value === 'ecommerce') {
+                    updateEcommerceOptions();
+                }
+            }
+        });
+
+        // Gestion des checkboxes
+        document.addEventListener('change', function(e) {
+            if (e.target.type === 'checkbox' && e.target.id !== 'seo-base') {
+                const option = e.target.closest('.option');
+                const step = option.closest('.step');
+                const stepNum = step.dataset.step;
+                
+                if (!selections[stepNum]) selections[stepNum] = {};
+                
+                const value = option.dataset.value;
+                const price = parseInt(option.dataset.price) || 0;
+                
+                if (e.target.checked) {
+                    selections[stepNum][value] = {
+                        price: price,
+                        text: option.querySelector('.option-title').textContent
+                    };
+                    option.classList.add('selected');
+                } else {
+                    delete selections[stepNum][value];
+                    option.classList.remove('selected');
+                }
+
+                // Gestion spéciale pour "J'ai déjà tout"
+                if (stepNum === '3' && value === 'nothing' && e.target.checked) {
+                    step.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+                        if (cb.id !== 'nothing') {
+                            cb.checked = false;
+                            cb.closest('.option').classList.remove('selected');
+                        }
+                    });
+                    selections[stepNum] = { nothing: { price: 0, text: "J'ai déjà tout" } };
+                }
+            }
+        });
+
+        function updateEcommerceOptions() {
+            const fonctionnalites = document.getElementById('fonctionnalites');
+            
+            // Ajouter les options e-commerce
+            const ecommerceOptions = `
+                <div class="checkbox-option option" data-value="paiement" data-price="1000">
+                    <input type="checkbox" id="paiement">
+                    <div>
+                        <div class="option-title">💳 Paiement en ligne</div>
+                        <div class="option-price">+1 000€</div>
+                        <div class="option-description">Stripe, PayPal, etc.</div>
+                    </div>
+                </div>
+                <div class="checkbox-option option" data-value="promo" data-price="500">
+                    <input type="checkbox" id="promo">
+                    <div>
+                        <div class="option-title">🏷️ Codes promo</div>
+                        <div class="option-price">+500€</div>
+                        <div class="option-description">Système de réductions</div>
+                    </div>
+                </div>
+            `;
+            
+            if (!document.getElementById('paiement')) {
+                fonctionnalites.innerHTML += ecommerceOptions;
+            }
+        }
+
+        function calculateTotal() {
+            let basePrice = 0;
+            let additionalPrice = 0;
+            let multiplier = 1;
+            
+            // Prix de base selon le type de projet
+            if (selections['1']) {
+                basePrice = selections['1'].price;
+                multiplier = selections['1'].multiplier || 1;
+            }
+            
+            // Ajout des prix additionnels
+            Object.keys(selections).forEach(stepNum => {
+                if (stepNum !== '1' && stepNum !== '8') { // Exclure type projet et délais
+                    const stepSelections = selections[stepNum];
+                    if (typeof stepSelections === 'object') {
+                        Object.values(stepSelections).forEach(selection => {
+                            if (selection.price) {
+                                additionalPrice += selection.price;
+                            }
+                        });
+                    }
+                }
+            });
+            
+            // Application du multiplicateur pour les délais
+            if (selections['8']) {
+                multiplier = selections['8'].multiplier || 1;
+            }
+            
+            return Math.round((basePrice + additionalPrice) * multiplier);
+        }
+
+        function generateFinalSummary() {
+            const summary = document.getElementById('finalSummary');
+            let html = '<h3 style="margin-bottom: 1rem; color: #333;">📋 Récapitulatif de votre projet :</h3>';
+            
+            // Type de projet (base)
+            if (selections['1']) {
+                html += `<div class="price-row">
+                    <span><strong>${selections['1'].text}</strong></span>
+                    <span><strong>${selections['1'].price.toLocaleString()}€</strong></span>
+                </div>`;
+            }
+            
+            // Pages supplémentaires
+            if (selections['2'] && selections['2'].price > 0) {
+                html += `<div class="price-row">
+                    <span>• ${selections['2'].text}</span>
+                    <span>+${selections['2'].price.toLocaleString()}€</span>
+                </div>`;
+            }
+            
+            // Design & Branding
+            if (selections['3']) {
+                Object.values(selections['3']).forEach(item => {
+                    if (item.price > 0) {
+                        html += `<div class="price-row">
+                            <span>• ${item.text}</span>
+                            <span>+${item.price.toLocaleString()}€</span>
+                        </div>`;
+                    }
+                });
+            }
+            
+            // Fonctionnalités
+            if (selections['4']) {
+                Object.values(selections['4']).forEach(item => {
+                    if (item.price > 0) {
+                        html += `<div class="price-row">
+                            <span>• ${item.text}</span>
+                            <span>+${item.price.toLocaleString()}€</span>
+                        </div>`;
+                    }
+                });
+            }
+            
+            // Langues
+            if (selections['5'] && selections['5'].price > 0) {
+                html += `<div class="price-row">
+                    <span>• ${selections['5'].text}</span>
+                    <span>+${selections['5'].price.toLocaleString()}€</span>
+                </div>`;
+            }
+            
+            // SEO & Performance
+            if (selections['6']) {
+                Object.values(selections['6']).forEach(item => {
+                    if (item.price > 0) {
+                        html += `<div class="price-row">
+                            <span>• ${item.text}</span>
+                            <span>+${item.price.toLocaleString()}€</span>
+                        </div>`;
+                    }
+                });
+            }
+            
+            // Support & Formation
+            if (selections['7']) {
+                Object.values(selections['7']).forEach(item => {
+                    if (item.price > 0) {
+                        html += `<div class="price-row">
+                            <span>• ${item.text}</span>
+                            <span>+${item.price.toLocaleString()}€</span>
+                        </div>`;
+                    }
+                });
+            }
+            
+            // Délais
+            if (selections['8'] && selections['8'].multiplier !== 1) {
+                const multiplierText = selections['8'].multiplier > 1 ? 
+                    `+${Math.round((selections['8'].multiplier - 1) * 100)}%` : 
+                    `-${Math.round((1 - selections['8'].multiplier) * 100)}%`;
+                html += `<div class="price-row">
+                    <span>• ${selections['8'].text}</span>
+                    <span>${multiplierText}</span>
+                </div>`;
+            }
+            
+            // Total
+            const total = calculateTotal();
+            html += `<div class="price-row price-total">
+                <span><strong>TOTAL ESTIMÉ HT</strong></span>
+                <span><strong>${total.toLocaleString()}€</strong></span>
+            </div>`;
+            
+            // Délai de livraison
+            let delai = '3-4 semaines';
+            if (selections['8']) {
+                if (selections['8'].value === 'express') delai = '2 semaines';
+                else if (selections['8'].value === 'flexible') delai = '4-6 semaines';
+            }
+            
+            html += `<div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #e5e7eb;">
+                <div class="price-row">
+                    <span>⏱️ <strong>Délai de livraison estimé</strong></span>
+                    <span><strong>${delai}</strong></span>
+                </div>
+            </div>`;
+            
+            summary.innerHTML = html;
+        }
+
+        function submitForm() {
+            const form = document.getElementById('contactForm');
+            const formData = new FormData(form);
+            
+            // Préparer les données à envoyer
+            const data = {
+                selections: selections,
+                total: calculateTotal(),
+                contact: {
+                    prenom: formData.get('prenom'),
+                    nom: formData.get('nom'),
+                    email: formData.get('email'),
+                    telephone: formData.get('telephone'),
+                    entreprise: formData.get('entreprise'),
+                    commentaires: formData.get('commentaires')
+                },
+                timestamp: new Date().toISOString()
+            };
+            
+            // Désactiver le bouton pendant l'envoi
+            const submitBtn = document.getElementById('nextBtn');
+            const originalText = submitBtn.textContent;
+            submitBtn.textContent = 'Génération du devis...';
+            submitBtn.disabled = true;
+            
+            // Envoi du devis au client ET notification à Marick
+            Promise.all([
+                sendQuoteToClient(data),
+                sendNotificationToMarick(data)
+            ])
+            .then(results => {
+                console.log('Devis envoyé au client et notification envoyée à Marick');
+                showSuccessMessage(data);
+                trackConversion(data.total);
+                localStorage.removeItem('webflow_simulator_progress');
+            })
+            .catch(error => {
+                console.error('Erreur lors de l\'envoi:', error);
+                showErrorMessage(data);
+            })
+            .finally(() => {
+                submitBtn.textContent = originalText;
+                submitBtn.disabled = false;
+            });
+        }
+
+        // Envoi du devis détaillé au client
+        function sendQuoteToClient(data) {
+            const clientEmailContent = generateClientEmailContent(data);
+            
+            const clientData = {
+                _replyto: 'marick@fluidcollectif.com',
+                _subject: `🚀 Votre devis Webflow personnalisé - ${data.total.toLocaleString()}€ HT`,
+                email: data.contact.email,
+                nom_client: `${data.contact.prenom} ${data.contact.nom}`,
+                entreprise: data.contact.entreprise || 'Votre entreprise',
+                total_ht: `${data.total.toLocaleString()}€`,
+                total_ttc: `${Math.round(data.total * 1.20).toLocaleString()}€`,
+                contenu_devis: clientEmailContent,
+                contact_direct: 'marick@fluidcollectif.com',
+                telephone_contact: '+33 X XX XX XX XX',
+                timestamp: new Date().toLocaleString('fr-FR')
+            };
+            
+            return fetch('https://formspree.io/f/mqakpqpo', {
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(clientData)
+            });
+        }
+
+        // Notification pour Marick
+        function sendNotificationToMarick(data) {
+            const notificationContent = generateNotificationContent(data);
+            
+            const notificationData = {
+                _replyto: data.contact.email,
+                _subject: `🔔 NOUVEAU LEAD - Devis ${data.total.toLocaleString()}€ HT - ${data.contact.prenom} ${data.contact.nom}`,
+                email: 'marick@fluidcollectif.com',
+                type_notification: 'NOUVEAU LEAD QUALIFIÉ',
+                nom_client: `${data.contact.prenom} ${data.contact.nom}`,
+                email_client: data.contact.email,
+                telephone_client: data.contact.telephone || 'Non renseigné',
+                entreprise_client: data.contact.entreprise || 'Non renseigné',
+                commentaires_client: data.contact.commentaires || 'Aucun commentaire',
+                total_ht: `${data.total.toLocaleString()}€`,
+                total_ttc: `${Math.round(data.total * 1.20).toLocaleString()}€`,
+                details_projet: notificationContent,
+                priorite: data.total >= 7000 ? 'HAUTE' : data.total >= 4000 ? 'MOYENNE' : 'NORMALE',
+                timestamp: new Date().toLocaleString('fr-FR'),
+                source: 'Simulateur Webflow'
+            };
+            
+            return fetch('https://formspree.io/f/mqakpqpo', {
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(notificationData)
+            });
+        }
+
+        // Contenu du devis pour le client
+        function generateClientEmailContent(data) {
+            let content = `Bonjour ${data.contact.prenom},\n\n`;
+            content += `Merci pour votre intérêt pour nos services Webflow !\n\n`;
+            content += `Voici votre devis personnalisé basé sur vos besoins :\n\n`;
+            
+            content += `=== VOTRE PROJET ===\n`;
+            
+            // Type de projet (base)
+            if (data.selections['1']) {
+                content += `🏗️ ${data.selections['1'].text}\n`;
+                content += `   Prix de base : ${data.selections['1'].price.toLocaleString()}€ HT\n\n`;
+            }
+            
+            // Options sélectionnées
+            content += `=== OPTIONS INCLUSES ===\n`;
+            
+            // Pages supplémentaires
+            if (data.selections['2'] && data.selections['2'].price > 0) {
+                content += `📄 ${data.selections['2'].text} : +${data.selections['2'].price.toLocaleString()}€\n`;
+            }
+            
+            // Design & Branding
+            if (data.selections['3']) {
+                Object.values(data.selections['3']).forEach(item => {
+                    if (item.price > 0) {
+                        content += `🎨 ${item.text} : +${item.price.toLocaleString()}€\n`;
+                    }
+                });
+            }
+            
+            // Fonctionnalités
+            if (data.selections['4']) {
+                Object.values(data.selections['4']).forEach(item => {
+                    if (item.price > 0) {
+                        content += `⚙️ ${item.text} : +${item.price.toLocaleString()}€\n`;
+                    }
+                });
+            }
+            
+            // Langues
+            if (data.selections['5'] && data.selections['5'].price > 0) {
+                content += `🌍 ${data.selections['5'].text} : +${data.selections['5'].price.toLocaleString()}€\n`;
+            }
+            
+            // SEO & Performance
+            if (data.selections['6']) {
+                Object.values(data.selections['6']).forEach(item => {
+                    if (item.price > 0) {
+                        content += `🚀 ${item.text} : +${item.price.toLocaleString()}€\n`;
+                    }
+                });
+            }
+            
+            // Support & Formation
+            if (data.selections['7']) {
+                Object.values(data.selections['7']).forEach(item => {
+                    if (item.price > 0) {
+                        content += `🎓 ${item.text} : +${item.price.toLocaleString()}€\n`;
+                    }
+                });
+            }
+            
+            content += `\n=== RÉCAPITULATIF FINANCIER ===\n`;
+            content += `💰 Total HT : ${data.total.toLocaleString()}€\n`;
+            content += `💰 TVA (20%) : ${Math.round(data.total * 0.20).toLocaleString()}€\n`;
+            content += `💰 Total TTC : ${Math.round(data.total * 1.20).toLocaleString()}€\n\n`;
+            
+            // Délai
+            let delai = '3-4 semaines';
+            if (data.selections['8']) {
+                if (data.selections['8'].value === 'express') delai = '2 semaines';
+                else if (data.selections['8'].value === 'flexible') delai = '4-6 semaines';
+            }
+            content += `⏱️ Délai de livraison : ${delai}\n\n`;
+            
+            content += `=== PROCHAINES ÉTAPES ===\n`;
+            content += `1. 📞 Nous vous contactons sous 24h pour valider vos besoins\n`;
+            content += `2. 💬 Call de découverte (30min) pour affiner votre projet\n`;
+            content += `3. 📋 Devis officiel détaillé sous 48h\n`;
+            content += `4. 🚀 Lancement de votre projet sous 1 semaine\n\n`;
+            
+            content += `=== GARANTIES FLUID COLLECTIF ===\n`;
+            content += `✅ Satisfaction garantie ou remboursé\n`;
+            content += `✅ Révisions illimitées pendant la conception\n`;
+            content += `✅ Formation complète à la gestion de votre site\n`;
+            content += `✅ Support technique 3 mois offert\n\n`;
+            
+            content += `=== BONUS INCLUS 🎁 ===\n`;
+            content += `• Guide "10 erreurs à éviter sur son site web"\n`;
+            content += `• Checklist SEO pour optimiser votre référencement\n`;
+            content += `• Templates d'emails pour votre communication\n\n`;
+            
+            content += `Des questions ? Répondez simplement à cet email !\n\n`;
+            content += `À très bientôt,\n`;
+            content += `L'équipe Fluid Collectif\n`;
+            content += `📧 marick@fluidcollectif.com\n`;
+            content += `📱 +33 X XX XX XX XX\n\n`;
+            
+            content += `---\n`;
+            content += `Ce devis est valable 30 jours à compter du ${new Date().toLocaleDateString('fr-FR')}\n`;
+            content += `Devis généré automatiquement le ${new Date().toLocaleString('fr-FR')}`;
+            
+            return content;
+        }
+
+        // Contenu de notification pour Marick
+        function generateNotificationContent(data) {
+            let content = `🚨 NOUVEAU LEAD QUALIFIÉ - ACTION REQUISE\n\n`;
+            
+            // Priorité basée sur le montant
+            const priorite = data.total >= 7000 ? 'HAUTE 🔥' : data.total >= 4000 ? 'MOYENNE 📈' : 'NORMALE 📋';
+            content += `PRIORITÉ: ${priorite}\n`;
+            content += `MONTANT: ${data.total.toLocaleString()}€ HT (${Math.round(data.total * 1.20).toLocaleString()}€ TTC)\n\n`;
+            
+            content += `=== INFORMATIONS CLIENT ===\n`;
+            content += `Nom: ${data.contact.prenom} ${data.contact.nom}\n`;
+            content += `Email: ${data.contact.email}\n`;
+            content += `Téléphone: ${data.contact.telephone || 'Non renseigné'}\n`;
+            content += `Entreprise: ${data.contact.entreprise || 'Non renseigné'}\n`;
+            content += `Commentaires: ${data.contact.commentaires || 'Aucun'}\n\n`;
+            
+            content += `=== PROJET DEMANDÉ ===\n`;
+            
+            // Type de projet
+            if (data.selections['1']) {
+                content += `🏗️ Type: ${data.selections['1'].text} (${data.selections['1'].price.toLocaleString()}€)\n`;
+            }
+            
+            // Résumé des principales options
+            const mainOptions = [];
+            if (data.selections['2'] && data.selections['2'].price > 0) mainOptions.push(data.selections['2'].text);
+            if (data.selections['3']) {
+                Object.values(data.selections['3']).forEach(item => {
+                    if (item.price > 0) mainOptions.push(item.text);
+                });
+            }
+            if (data.selections['4']) {
+                Object.values(data.selections['4']).forEach(item => {
+                    if (item.price > 0) mainOptions.push(item.text);
+                });
+            }
+            
+            if (mainOptions.length > 0) {
+                content += `📋 Options principales: ${mainOptions.join(', ')}\n`;
+            }
+            
+            // Délai
+            if (data.selections['8']) {
+                const delaiText = data.selections['8'].value === 'express' ? 'EXPRESS (2 sem)' :
+                                data.selections['8'].value === 'flexible' ? 'Flexible (4-6 sem)' :
+                                'Standard (3-4 sem)';
+                content += `⏱️ Délai souhaité: ${delaiText}\n`;
+            }
+            
+            content += `\n=== ACTIONS À FAIRE ===\n`;
+            content += `⚡ URGENT: Appeler sous 2h (lead chaud !)\n`;
+            content += `📧 Email de suivi envoyé automatiquement au client\n`;
+            content += `📞 Programmer call découverte dans les 24h\n`;
+            content += `📋 Préparer devis officiel détaillé\n`;
+            content += `🎁 Envoyer les bonus promis\n\n`;
+            
+            content += `=== SCORING LEAD ===\n`;
+            let score = 0;
+            if (data.total >= 7000) score += 30;
+            else if (data.total >= 4000) score += 20;
+            else score += 10;
+            
+            if (data.contact.entreprise) score += 15;
+            if (data.contact.telephone) score += 10;
+            if (data.contact.commentaires && data.contact.commentaires.length > 20) score += 10;
+            if (data.selections['8']?.value === 'express') score += 15;
+            
+            content += `Score: ${score}/80 - ${score >= 60 ? 'Lead Premium 🌟' : score >= 40 ? 'Lead Qualifié ✅' : 'Lead Standard 📋'}\n\n`;
+            
+            content += `Généré le: ${new Date().toLocaleString('fr-FR')}\n`;
+            content += `Source: Simulateur Webflow\n`;
+            
+            return content;
+        }
+
+        function showSuccessMessage(data) {
+            // Remplacer le contenu de l'étape par un message de succès
+            const step = document.querySelector('[data-step="10"]');
+            step.innerHTML = `
+                <div style="text-align: center; padding: 2rem;">
+                    <div style="font-size: 4rem; margin-bottom: 1rem;">📧</div>
+                    <h2 style="color: #16a34a; margin-bottom: 1rem;">Devis envoyé dans votre boîte mail !</h2>
+                    
+                    <div style="background: #f0f9ff; padding: 2rem; border-radius: 12px; margin-bottom: 2rem;">
+                        <h3 style="color: #0369a1; margin-bottom: 1rem;">📬 Vérifiez votre email</h3>
+                        <p style="margin-bottom: 0.5rem;"><strong>Destinataire:</strong> ${data.contact.email}</p>
+                        <p style="margin-bottom: 0.5rem;"><strong>Objet:</strong> "🚀 Votre devis Webflow personnalisé - ${data.total.toLocaleString()}€ HT"</p>
+                        <p style="margin-bottom: 1rem; font-size: 0.9rem; color: #6b7280;">💡 Pensez à vérifier vos spams si vous ne le trouvez pas</p>
+                    </div>
+                    
+                    <div style="background: #ecfdf5; padding: 1.5rem; border-radius: 8px; margin-bottom: 2rem;">
+                        <h3 style="color: #16a34a; margin-bottom: 1rem;">✨ Ce que vous avez reçu</h3>
+                        <p style="margin-bottom: 0.5rem;">📋 Devis détaillé avec tous les prix</p>
+                        <p style="margin-bottom: 0.5rem;">📊 Récapitulatif HT et TTC</p>
+                        <p style="margin-bottom: 0.5rem;">⏱️ Délais de livraison</p>
+                        <p style="margin-bottom: 0.5rem;">🎁 Guides bonus inclus</p>
+                        <p style="margin-bottom: 1rem;">📞 Nos coordonnées directes</p>
+                    </div>
+                    
+                    <div style="background: #fef3c7; padding: 1.5rem; border-radius: 8px;">
+                        <h3 style="color: #d97706; margin-bottom: 1rem;">🚀 Suite du processus</h3>
+                        <p style="color: #92400e; margin-bottom: 0.5rem;"><strong>Nous vous appelons sous 24h</strong></p>
+                        <p style="color: #92400e; font-size: 0.9rem;">Pour valider vos besoins et planifier votre projet</p>
+                    </div>
+                    
+                    <div style="margin-top: 2rem;">
+                        <p style="font-size: 0.9rem; color: #6b7280;">Une question ? Répondez directement à l'email reçu !</p>
+                    </div>
+                </div>
+            `;
+            
+            // Masquer les boutons de navigation
+            document.querySelector('.navigation').style.display = 'none';
+        }
+
+        function showErrorMessage(data) {
+            alert(`❌ Une erreur est survenue lors de l'envoi du devis.
+
+📧 Pas de panique ! Contactez-nous directement :
+Email: marick@fluidcollectif.com
+Téléphone: +33 X XX XX XX XX
+
+📋 Mentionnez ces informations :
+Nom: ${data.contact.prenom} ${data.contact.nom}
+Email: ${data.contact.email}  
+Total estimé: ${data.total.toLocaleString()}€ HT
+
+Nous vous enverrons votre devis immédiatement !`);
+        }
+
+        function trackConversion(total) {
+            // Google Analytics 4
+            if (typeof gtag !== 'undefined') {
+                gtag('event', 'generate_lead', {
+                    currency: 'EUR',
+                    value: total,
+                    event_category: 'Simulator',
+                    event_label: 'Quote Submission'
+                });
+            }
+            
+            // Facebook Pixel
+            if (typeof fbq !== 'undefined') {
+                fbq('track', 'Lead', {
+                    value: total,
+                    currency: 'EUR',
+                    content_name: 'Webflow Quote'
+                });
+            }
+        }
+
+        // Navigation au clavier
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'ArrowRight' && currentStep < totalSteps) {
+                nextStep();
+            } else if (e.key === 'ArrowLeft' && currentStep > 1) {
+                previousStep();
+            }
+        });
+
+        // Initialisation
+        showStep(1);
+        updateProgress();
+
+        // Analytics (optionnel)
+        function trackStep(step) {
+            // Google Analytics 4
+            if (typeof gtag !== 'undefined') {
+                gtag('event', 'simulator_step', {
+                    step_number: step,
+                    step_name: `step_${step}`
+                });
+            }
+            
+            // Facebook Pixel
+            if (typeof fbq !== 'undefined') {
+                fbq('track', 'ViewContent', {
+                    content_name: `Simulator Step ${step}`
+                });
+            }
+        }
+
+        // Fonction pour intégration Webflow
+        function sendToWebflow(data) {
+            // Si vous utilisez Webflow Forms API
+            fetch('/api/submit-quote', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => response.json())
+            .then(result => {
+                console.log('Succès:', result);
+            })
+            .catch(error => {
+                console.error('Erreur:', error);
+            });
+        }
+
+        // Sauvegarde locale (optionnelle)
+        function saveProgress() {
+            localStorage.setItem('webflow_simulator_progress', JSON.stringify({
+                currentStep: currentStep,
+                selections: selections
+            }));
+        }
+
+        function loadProgress() {
+            const saved = localStorage.getItem('webflow_simulator_progress');
+            if (saved) {
+                const data = JSON.parse(saved);
+                currentStep = data.currentStep;
+                selections = data.selections;
+                showStep(currentStep);
+                
+                // Restaurer les sélections visuellement
+                Object.keys(selections).forEach(stepNum => {
+                    const step = document.querySelector(`[data-step="${stepNum}"]`);
+                    if (step) {
+                        const selection = selections[stepNum];
+                        if (typeof selection === 'object' && selection.value) {
+                            // Sélection unique
+                            const option = step.querySelector(`[data-value="${selection.value}"]`);
+                            if (option) option.classList.add('selected');
+                        } else {
+                            // Sélections multiples (checkboxes)
+                            Object.keys(selection).forEach(key => {
+                                const checkbox = step.querySelector(`#${key}`);
+                                if (checkbox) {
+                                    checkbox.checked = true;
+                                    checkbox.closest('.option').classList.add('selected');
+                                }
+                            });
+                        }
+                    }
+                });
+            }
+        }
+
+        // Auto-sauvegarde
+        setInterval(saveProgress, 5000);
+
+        // Charger la progression au démarrage (optionnel)
+        // loadProgress();
+    </script>
+</body>
+</html>
